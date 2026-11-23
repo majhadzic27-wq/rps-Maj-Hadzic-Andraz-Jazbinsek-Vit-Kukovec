@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moji stroški</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__brand">💰 Moji stroški</div>
+
+  <div class="topbar__month">
+    <button type="button" id="prevMonthBtn" class="icon-btn" aria-label="Prejšnji mesec">‹</button>
+    <span id="currentMonthLabel" class="topbar__month-label">—</span>
+    <button type="button" id="nextMonthBtn" class="icon-btn" aria-label="Naslednji mesec">›</button>
+  </div>
+
+  <div class="topbar__actions">
+    <span class="topbar__user" id="topbarUser"></span>
+    <button type="button" id="addTxBtn" class="btn btn--primary">+ Dodaj strošek</button>
+    <button type="button" id="logoutBtn" class="btn btn--ghost" title="Odjava">Odjava</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabsNav">
+  <button type="button" class="tab is-active" data-tab="pregled">Pregled</button>
+  <button type="button" class="tab" data-tab="transakcije">Transakcije</button>
+  <button type="button" class="tab" data-tab="proracun">Proračun</button>
+  <button type="button" class="tab" data-tab="varcevanje">Varčevanje</button>
+  <button type="button" class="tab" data-tab="nastavitve">Nastavitve</button>
+</nav>
+
+<main class="view-container">
+
+  <!-- PREGLED (dashboard) -->
+  <section id="view-pregled" class="view is-active">
+    <div class="cards-row">
+      <div class="card card--income">
+        <div class="card__label">Prihodki ta mesec</div>
+        <div class="card__value" id="sumIncome">0,00 €</div>
+      </div>
+      <div class="card card--expense">
+        <div class="card__label">Odhodki ta mesec</div>
+        <div class="card__value" id="sumExpense">0,00 €</div>
+      </div>
+      <div class="card card--balance">
+        <div class="card__label">Saldo</div>
+        <div class="card__value" id="sumBalance">0,00 €</div>
+      </div>
+    </div>
+
+    <div class="semafor-row" id="budgetSemafor">
+      <span class="semafor-dot" id="semaforDot"></span>
+      <span id="semaforText">Proračun ni nastavljen.</span>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-box">
+        <h3>Odhodki po kategorijah</h3>
+        <div class="chart-canvas-wrap">
+          <canvas id="categoryChart" width="320" height="260"></canvas>
+          <div id="categoryChartFallback" class="chart-fallback" hidden></div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <h3>Prihodki in odhodki (zadnjih 6 mesecev)</h3>
+        <div class="chart-canvas-wrap">
+          <canvas id="trendChart" width="320" height="260"></canvas>
+          <div id="trendChartFallback" class="chart-fallback" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="recent-box">
+      <h3>Zadnje transakcije</h3>
+      <div id="recentTxList" class="tx-list"></div>
+    </div>
+  </section>
+
+  <!-- TRANSAKCIJE -->
+  <section id="view-transakcije" class="view">
+    <div class="filters-bar">
+      <input type="search" id="searchInput" placeholder="Iskanje po opisu ali kategoriji ...">
+      <select id="filterType">
+        <option value="all">Vse vrste</option>
+        <option value="income">Prihodki</option>
+        <option value="expense">Odhodki</option>
+      </select>
+      <select id="filterCategory">
+        <option value="all">Vse kategorije</option>
+      </select>
+      <select id="sortBy">
+        <option value="date-desc">Datum (najnovejše)</option>
+        <option value="date-asc">Datum (najstarejše)</option>
+        <option value="amount-desc">Znesek (največji)</option>
+        <option value="amount-asc">Znesek (najmanjši)</option>
+      </select>
+    </div>
+    <div id="fullTxList" class="tx-list"></div>
+    <p id="noResultsMsg" class="empty-msg" hidden>Ni rezultatov, ki bi ustrezali iskanju/filtrom.</p>
+  </section>
+
+  <!-- PRORAČUN -->
+  <section id="view-proracun" class="view">
+    <div class="panel">
+      <h3>Mesečni proračun</h3>
+      <form id="budgetForm" novalidate>
+        <div class="field">
+          <label for="budgetAmount">Znesek proračuna (€)</label>
+          <input type="number" id="budgetAmount" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label for="budgetThreshold">Opozorilni prag (%)</label>
+          <input type="number" id="budgetThreshold" step="1" min="1" max="100">
+        </div>
+        <button type="submit" class="btn btn--primary">Shrani proračun</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Poraba proračuna</h3>
+      <div class="budget-bar-wrap">
+        <div class="budget-bar" id="budgetBar"></div>
+      </div>
+      <p id="budgetSummaryText"></p>
+    </div>
+  </section>
+
+  <!-- VARČEVANJE -->
+  <section id="view-varcevanje" class="view">
+    <div class="panel">
+      <h3>Cilj varčevanja</h3>
+      <form id="savingsGoalForm" novalidate>
+        <div class="field">
+          <label for="savingsName">Ime cilja</label>
+          <input type="text" id="savingsName" maxlength="100">
+        </div>
+        <div class="field">
+          <label for="savingsTarget">Ciljni znesek (€)</label>
+          <input type="number" id="savingsTarget" step="0.01" min="0.01">
+        </div>
+        <button type="submit" class="btn btn--primary">Shrani cilj</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Napredek</h3>
+      <div class="budget-bar-wrap">
+        <div class="budget-bar budget-bar--savings" id="savingsBar"></div>
+      </div>
+      <p id="savingsSummaryText"></p>
+
+      <form id="savingsContributeForm" novalidate class="inline-form">
+        <input type="number" id="savingsContribution" step="0.01" min="0.01" placeholder="Znesek prispevka (€)">
+        <button type="submit" class="btn btn--secondary">Dodaj prispevek</button>
+      </form>
+      <button type="button" id="resetSavingsBtn" class="btn btn--ghost">Ponastavi napredek na 0 €</button>
+    </div>
+  </section>
+
+  <!-- NASTAVITVE -->
+  <section id="view-nastavitve" class="view">
+    <div class="panel">
+      <h3>O podatkih</h3>
+      <p>Vsi podatki so shranjeni v MySQL podatkovni bazi na tvojem lokalnem strežniku (MAMP) in so vezani na tvoj uporabniški račun. Noben podatek se ne pošilja na splet.</p>
+    </div>
+    <div class="panel">
+      <h3>Izvoz podatkov</h3>
+      <p>Prenesi vse svoje transakcije kot CSV datoteko (odpre se lahko v Excelu).</p>
+      <div class="settings-actions">
+        <a id="exportCsvBtn" class="btn btn--secondary" href="api/export.php">⬇ Izvozi CSV</a>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Testni podatki</h3>
+      <p>Ponastavitev bo vplivala samo na podatke tvojega računa.</p>
+      <div class="settings-actions">
+        <button type="button" id="reseedBtn" class="btn btn--secondary">Ponastavi na testne podatke</button>
+        <button type="button" id="wipeBtn" class="btn btn--danger">Izbriši vse podatke</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL: dodaj/uredi transakcijo -->
+<div class="modal-overlay" id="txModalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="txModalTitle">
+    <div class="modal__header">
+      <h2 id="txModalTitle">Dodaj strošek</h2>
+      <button type="button" class="icon-btn" id="closeTxModalBtn" aria-label="Zapri">✕</button>
+    </div>
+    <form id="txForm" novalidate>
+      <input type="hidden" id="txId">
+
+      <div class="field-row">
+        <label><input type="radio" name="txType" value="expense" checked> Odhodek</label>
+        <label><input type="radio" name="txType" value="income"> Prihodek</label>
+      </div>
+
+      <div class="field">
+        <label for="txAmount">Znesek (€)</label>
+        <input type="number" id="txAmount" step="0.01" min="0.01">
+      </div>
+
+      <div class="field">
+        <label for="txCategory">Kategorija</label>
+        <select id="txCategory"></select>
+      </div>
+
+      <div class="field">
+        <label for="txDate">Datum</label>
+        <input type="date" id="txDate">
+      </div>
+
+      <div class="field">
+        <label for="txDescription">Opis</label>
+        <input type="text" id="txDescription" maxlength="255">
+      </div>
+
+      <p class="form-error" id="txFormError" hidden></p>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" id="cancelTxBtn">Prekliči</button>
+        <button type="submit" class="btn btn--primary" id="saveTxBtn">Shrani</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
